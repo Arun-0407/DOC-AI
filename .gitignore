@@ -1,0 +1,61 @@
+# ─── Dependencies ───────────────────────────────────────────────────────────
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# ─── Environment (secrets — never commit) ───────────────────────────────────
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.local
+
+# ─── Build artefacts ────────────────────────────────────────────────────────
+.next/
+out/
+dist/
+build/
+*.egg-info/
+tsconfig.tsbuildinfo
+
+# ─── IDE ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── OS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Runtime artefacts ──────────────────────────────────────────────────────
+uploads/
+*.zip
+postgres_data/
+
+# ─── Logs ───────────────────────────────────────────────────────────────────
+*.log
+backend/*.log
+backend/**/*.log
+
+# ─── Test artefacts ─────────────────────────────────────────────────────────
+test_*.py
+quick_check.py
+create_admin.py
+*.test.pdf
+test_enterprise_output.pdf
+pdf_enterprise_test.pdf
+backend_log.txt
+frontend_log.txt
+
+# ─── Coverage ───────────────────────────────────────────────────────────────
+coverage/
+htmlcov/
+.coverage
+
+# ─── RFC SDK (local dev only) ────────────────────────────────────────────────
+nwrfcsdk/
+sapnwrfc.ini

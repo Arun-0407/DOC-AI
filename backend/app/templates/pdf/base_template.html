@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h1, h2 { color: #0F4C81; border-bottom: 2px solid #0F4C81; }
+        .page-break { page-break-before: always; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background-color: #f2f2f2; color: #0F4C81; }
+    </style>
+</head>
+<body>
+    <h1>{{ doc.title or 'SAP Technical Documentation' }}</h1>
+    <div class="page-break"></div>
+    <h2>1. Business View</h2>
+    <p>{{ doc.business_view.objective if doc.business_view else '' }}</p>
+    <h2>2. Technical View</h2>
+    <p>{{ doc.technical_view.components if doc.technical_view else '' }}</p>
+</body>
+</html>

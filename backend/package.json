@@ -1,0 +1,13 @@
+{
+  "name": "sap-rfc-bridge",
+  "version": "1.0.0",
+  "description": "SAP RFC bridge for DOC AI — wraps node-rfc so Python 3.14 can call SAP",
+  "main": "sap_rfc_bridge.js",
+  "scripts": {
+    "start": "node sap_rfc_bridge.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "node-rfc": "^3.4.0"
+  }
+}

@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: docai-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: docai
+      POSTGRES_PASSWORD: docai
+      POSTGRES_DB: docai_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docai -d docai_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: docai-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://docai:docai@db:5432/docai_db
+      - JWT_SECRET=${JWT_SECRET:-super-secret-change-in-production}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - CORS_ORIGINS=["http://localhost:3000","http://frontend:3000"]
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - upload_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: docai-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  upload_data:
