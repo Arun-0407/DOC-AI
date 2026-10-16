@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from uuid import UUID
 from app.models.chat import ChatMessage
 from app.models.upload import Upload
-from app.services.ai_service import AIService
+from app.services.doc_generator import get_ai_service
 
 
 async def process_chat(db: AsyncSession, upload_id: UUID, user_id: UUID, message: str) -> str:
@@ -27,8 +27,8 @@ async def process_chat(db: AsyncSession, upload_id: UUID, user_id: UUID, message
     messages = [{"role": msg.role, "content": msg.content} for msg in history]
     messages.append({"role": "user", "content": message})
 
-    # 4. Call AI
-    ai = AIService()
+    # 4. Call AI (use module-level singleton to preserve OAuth token cache)
+    ai = get_ai_service()
     response_text = await ai.chat_with_code(messages, source_code)
 
     # 5. Save user message to DB

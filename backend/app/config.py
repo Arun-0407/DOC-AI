@@ -65,6 +65,16 @@ class Settings(BaseSettings):
     SAP_BTP_DESTINATION_NAME: str = ""
     SAP_BTP_DESTINATION_SERVICE_URL: str = ""
 
+    # ── Email / SMTP (for password reset emails) ──────────────────────────────
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""          # App password for Gmail
+    SMTP_FROM_NAME: str = "DocGen AI"
+    SMTP_FROM_EMAIL: str = ""        # Defaults to SMTP_USER if blank
+    FRONTEND_URL: str = "http://localhost:3000"
+    PASSWORD_RESET_EXPIRY_MINUTES: int = 30
+
     @property
     def sap_doc_api_enabled(self) -> bool:
        

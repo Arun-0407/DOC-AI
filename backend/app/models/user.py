@@ -18,6 +18,10 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
+    # Password reset fields
+    password_reset_token = Column(String(255), nullable=True, index=True)
+    password_reset_expires = Column(DateTime, nullable=True)
+
     projects = relationship("Project", back_populates="owner")
     uploads = relationship("Upload", back_populates="uploader")
     documents = relationship("Document", back_populates="generator")

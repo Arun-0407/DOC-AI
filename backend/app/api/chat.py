@@ -6,7 +6,9 @@ from uuid import UUID
 from app.database import get_db
 from app.schemas.chat import ChatRequest, ChatMessageResponse
 from app.api.deps import get_current_user
+from app.core.exceptions import ForbiddenException, NotFoundException
 from app.models.user import User
+from app.models.upload import Upload
 from app.models.chat import ChatMessage
 from app.services.chat_service import process_chat
 
@@ -47,6 +49,14 @@ async def get_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    # Verify the upload exists and belongs to the current user (or user is admin)
+    upload_result = await db.execute(select(Upload).filter(Upload.id == upload_id))
+    upload = upload_result.scalars().first()
+    if not upload:
+        raise NotFoundException("Upload not found")
+    if current_user.role != "admin" and upload.uploaded_by != current_user.id:
+        raise ForbiddenException("You do not have access to this chat history")
+
     result = await db.execute(
         select(ChatMessage)
         .filter(ChatMessage.upload_id == upload_id)

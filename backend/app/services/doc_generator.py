@@ -15,6 +15,17 @@ from app.services.ai_service import AIService
 
 logger = logging.getLogger(__name__)
 
+# Module-level singleton — preserves OAuth token cache across all document
+# generation calls instead of fetching a new BTP token on every section.
+_ai_service: AIService | None = None
+
+
+def get_ai_service() -> AIService:
+    global _ai_service
+    if _ai_service is None:
+        _ai_service = AIService()
+    return _ai_service
+
 # Run sections in groups of 3 to avoid overwhelming the AI endpoint while
 # still being faster than pure sequential execution.
 MAX_PARALLEL_SECTIONS = 3
@@ -204,7 +215,7 @@ async def generate_document(db: AsyncSession, document_id: UUID, user_id: UUID) 
             document_id, upload.filename, len(source_code),
         )
 
-    ai = AIService()
+    ai = get_ai_service()
     limiter = asyncio.Semaphore(MAX_PARALLEL_SECTIONS)
     total = len(SECTIONS)
     done = 0

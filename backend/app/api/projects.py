@@ -41,6 +41,8 @@ async def list_projects(
         .options(selectinload(Project.uploads), selectinload(Project.documents))
         .filter(Project.owner_id == current_user.id, Project.status == 'active')
         .order_by(Project.created_at.desc())
+        .offset((page - 1) * limit)
+        .limit(limit)
     )
     return result.scalars().all()
 

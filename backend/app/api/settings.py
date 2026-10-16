@@ -1,12 +1,16 @@
 """
 Settings API — save & test SAP BTP AI Core credentials at runtime.
 Credentials are persisted to the .env file so they survive restarts.
+All endpoints require admin role.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 import os, httpx
 from pathlib import Path
+
+from app.api.deps import require_role
+from app.models.user import User
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -41,7 +45,7 @@ def _write_env(env: dict):
 
 
 @router.get("/ai-config")
-async def get_ai_config():
+async def get_ai_config(current_user: User = Depends(require_role("admin"))):
     """Return current AI config (secrets masked)."""
     env = _read_env()
     return {
@@ -55,7 +59,7 @@ async def get_ai_config():
 
 
 @router.post("/ai-config")
-async def save_ai_config(config: AiConfig):
+async def save_ai_config(config: AiConfig, current_user: User = Depends(require_role("admin"))):
     """Save AI credentials to .env file and update live settings."""
     env = _read_env()
 
@@ -93,7 +97,7 @@ async def save_ai_config(config: AiConfig):
 
 
 @router.post("/ai-test")
-async def test_ai_config(config: AiConfig):
+async def test_ai_config(config: AiConfig, current_user: User = Depends(require_role("admin"))):
     """Test the AI connection by fetching an OAuth token from BTP."""
     client_id = config.btp_client_id
     client_secret = config.btp_client_secret

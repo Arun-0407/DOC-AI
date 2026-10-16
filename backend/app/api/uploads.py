@@ -60,6 +60,18 @@ async def upload_file(
     await _get_project_or_403(db, project_id, current_user)
     try:
         logger.info("Uploading file: %s, project: %s", file.filename, project_id)
+
+        # Read raw bytes first so we can check the actual file size
+        raw_bytes = await file.read()
+        actual_size = len(raw_bytes)
+        if actual_size > settings.MAX_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large: {actual_size // (1024*1024)} MB exceeds limit of {settings.MAX_UPLOAD_SIZE // (1024*1024)} MB",
+            )
+        # Reset the file pointer so save_upload_file can re-read it
+        await file.seek(0)
+
         file_path = await save_upload_file(file, settings.UPLOAD_DIR)
         content = read_file_content(file_path)
         file_type = detect_abap_type(content, file.filename)
@@ -68,7 +80,7 @@ async def upload_file(
             project_id=project_id,
             filename=file.filename,
             file_type=file_type,
-            file_size=len(content.encode("utf-8")),
+            file_size=actual_size,          # ← actual bytes, not text length
             content=content,
             parsed_metadata=parsed_metadata,
             uploaded_by=current_user.id,
@@ -85,7 +97,7 @@ async def upload_file(
         raise HTTPException(status_code=500, detail=f"Upload failed: {exc}")
 
 
-@router.post("/zip", response_model=UploadResponse)
+@router.post("/zip", response_model=List[UploadResponse])
 async def upload_zip(
     project_id: UUID = Form(...),
     file: UploadFile = File(...),
@@ -102,13 +114,15 @@ async def upload_zip(
         uploads = []
         for item in extracted:
             content = item["content"]
+            # Use actual byte size stored by extract_zip, fallback to encoded length
+            actual_size = item.get("file_size") or len(content.encode("utf-8"))
             file_type = detect_abap_type(content, item["filename"])
             parsed_metadata = _extractor.extract(content, file_type, item["filename"])
             upload = Upload(
                 project_id=project_id,
                 filename=item["filename"],
                 file_type=file_type,
-                file_size=len(content.encode("utf-8")),
+                file_size=actual_size,          # ← actual bytes
                 content=content,
                 parsed_metadata=parsed_metadata,
                 uploaded_by=current_user.id,
@@ -120,7 +134,8 @@ async def upload_zip(
         for u in uploads:
             await db.refresh(u)
         logger.info("ZIP upload: %d files extracted", len(uploads))
-        return uploads[0]
+        # Return ALL uploads (not just the first one)
+        return uploads
     except (NotFoundException, ForbiddenException, HTTPException):
         raise
     except Exception as exc:

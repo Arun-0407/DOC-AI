@@ -8,11 +8,12 @@ import time
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
 
-from app.api import auth, chat, documents, export, projects, sap, search, uploads
+from app.api import admin, auth, chat, documents, export, projects, sap, search, uploads
 from app.api import settings as settings_api
 from app.config import settings
 from app.database import Base, engine
@@ -73,12 +74,30 @@ async def lifespan(_: FastAPI):
         bridge_process.terminate()
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security-related HTTP response headers to every response."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        # Only add HSTS when running over HTTPS (avoids breaking local dev HTTP)
+        if request.url.scheme == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+
 app = FastAPI(
     title="DOC AI API",
     version="1.0.0",
     redirect_slashes=False,
     lifespan=lifespan,
 )
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -96,7 +115,7 @@ app.add_middleware(
     ],
 )
 
-for module in (auth, projects, uploads, documents, export, chat, search, settings_api, sap):
+for module in (auth, projects, uploads, documents, export, chat, search, settings_api, sap, admin):
     app.include_router(module.router)
 
 
